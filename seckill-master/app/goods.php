@@ -54,6 +54,7 @@
 				//组装redis中的库存
 				$count 	= $redis->listcount($key);
 				$value['rediscount'] = $count;//引用修改当前组
+
 			}
 //			dump($list);
 			$this->render('',['list'=>$list]);
@@ -88,6 +89,7 @@
 					$redis->clearlist($key);
 					for($i=1;$i<=$count;$i++){
 						$redis->addRlist($key,1);
+
 					}
 
                     $this->ajaxreturn(['status'=>1,'info'=>'编辑成功']);

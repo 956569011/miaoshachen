@@ -59,14 +59,17 @@
         /**
          * 获取用户定单是不是存在
          */
-        public function getUserOrder($id){
-            $sql = 'select * from orders where uid = '.$id;
+        public function getUserOrder($id,$lock=''){
+            $sql = 'select * from orders where uid = ' . $id . ( $lock ? $lock : '');
+
             $result = $this->query($sql);
             if($result[0]){
                 return $result[0];
             }else{
                 return false;
             }
+
+
         }
 		
 	}

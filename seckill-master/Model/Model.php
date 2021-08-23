@@ -49,7 +49,9 @@
 		 *
 		*/
 		public function query($sql){
+
 			$handel = $this->_pdo->query($sql);
+
 			$result = [];
 			foreach($handel as $row) {
 				$result[] = $row;

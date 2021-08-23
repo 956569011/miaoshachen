@@ -9,4 +9,6 @@
 	//模拟1号商品并发购卖减库存
 	//ab -c 50 -n 200 "http://www.miaosha.com/index.php?app=app&c=seckill&a=addQsec&gid=1&type=redis"
 	//ab -c 100 -n 1000 "http://www.miaosha.com/index.php?app=app&c=seckill&a=addQsec&gid=1&type=redis"
+    //ab -c 50 -n 200  "http://www.miaosha.com/index.php?app=app&c=seckill&a=addQsec&gid=1&type=redis"
 	//ab -c 100 -n 1000 -k "http://www.miaosha.com/index.php?app=app&c=seckill&a=addQsec&gid=1&type=redis"
+

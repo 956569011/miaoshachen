@@ -1,0 +1,1 @@
+app=app&c=seckill&a=addQsec&gid=1&type=transaction

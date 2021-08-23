@@ -38,6 +38,7 @@ class seckill extends common
 		}
 
 		if($this->_redis === null){
+
 			$this->_redis = new QRedis();
 		}
 	}
@@ -160,6 +161,7 @@ class seckill extends common
 	protected function order_check_redis($gid){
 
 		$goodsInfo 	= $this->_goodsModel->getGoods($gid);
+
 		if(!$goodsInfo){
 			$this->_error = '商品不存在';
 			return false;
@@ -184,18 +186,19 @@ class seckill extends common
 
         //思考:
         //并发时进来的请求数 查看只有redis指定库存的请求才有进来
-        file_put_contents('./jilu.txt',$data['uid'] . PHP_EOL,FILE_APPEND);
+//        file_put_contents('./jilu.txt',$data['uid'] . PHP_EOL,FILE_APPEND);
 
         //思考:
         //判断如果用户订单存在不能重复创建订单,下面思路还是有问题
         //(判断相同用用户只能下一次单,这里有个问题是,如果同一个用户通过其他方式并发下了多个单,会消耗redis 单线程 原子操作,库存)
-        //这样就会导致商品会出现不能全部卖出的情况
-        //现在 这样并发查询时会导致查询获取资源在数据库都不存在用户的结果 就会导致用户下了多个单
-//        $order_res = $this->_orderModel->getUserOrder($data['uid']);
-//        if($order_res){
-//            $this->_error = '订单已存在,不能重复创建';
-//            return false;
-//        }
+        //这样就会导致商品会出现不能全部卖出的情况 还有一个问题 进来的请求数是等于当前库存的数
+        //假设:一个用户通过某种方式并发数据库查询是否下单过,那么会出现他们查询到的资源都是没有下单的资源,就会下两次及两次以上的单
+/*        $order_res = $this->_orderModel->getUserOrder($data['uid']);
+        if($order_res){
+
+            $this->_error = '订单已存在,不能重复创建';
+            return false;
+        }*/
 
         $order_rs 			= $this->_orderModel->create_order($data);
 
@@ -261,7 +264,20 @@ class seckill extends common
 			//$sql_forlock		= 'select * from goods where id = '.$gid .' limit 1';
 			$result		= $pdo->query($sql_forlock,PDO::FETCH_ASSOC);
 			$goodsInfo	= $result->fetch();
-			
+
+			$uid = rand(1,5);
+
+            //chen 检测数据库存是否存在同用户下了多个单,同用户只能下一个检测
+                $order_res = $this->_orderModel->getUserOrder($uid);
+
+                if($order_res){
+                    $this->_error = '用户已下过单不能重复下单';
+                    $pdo->commit();//提交 chenyao加
+                    return false;
+                }
+            //end chen
+
+
 			if($goodsInfo['counts']>0){
 				
 				//去库存
@@ -274,13 +290,25 @@ class seckill extends common
 					$this->_error = '库存减少失败';
 					return false;
 				}
-				
+
+                //chen chen 检测数据库存是否存在同用户下了多个单,同用户只能下一个检测
+//                $order_res = $this->_orderModel->getUserOrder($uid);
+//
+//                if($order_res){
+//                    $this->_error = '用户已下过单不能重复下单';
+//                    $pdo->rollBack();//提交 chenyao加
+//                    return false;
+//                }
+                //end chen
+
+
+
 				//创订单
 				$data 				= [];
 				$data['id']			= 'null';
 				$data['order_id'] 	= $this->_orderModel->buildOrderNo();
 				$data['goods_id'] 	= $goodsInfo['id'];
-				$data['uid']		= 1;
+				$data['uid']		= $uid;
 				$data['addtime'] 	= time();
 				
 				$sql = 'insert into orders (id,order_id,goods_id,uid,addtime) values ('.$data['id'].',"'.$data['order_id'].'","'.$data['goods_id'].'","'.$data['uid'].'","'.$data['addtime'].'")';			
@@ -321,21 +349,21 @@ class seckill extends common
 	 * mysql 事物处理，也可以用存储过程
 	 *
 	*/
-	private function create_order($goodsInfo){
-		//生成订单
-		$data 				= [];
-		$data['order_id'] 	= $this->_orderModel->buildOrderNo();
-		$data['goods_id'] 	= $goodsInfo['id'];
-		$data['addtime'] 	= time();
-		$data['uid']		= 1;
-		$order_rs 			= $this->_orderModel->create_order($data);
-		
-		//库存减少
-		$gid 	= $goodsInfo['id'];
-		$sql	= 'UPDATE goods SET counts = counts - 1 WHERE id = '.$gid;
-		$result = $this->_goodsModel->exect($sql);
-		return true;
-	}
+//	private function create_order($goodsInfo){
+//		//生成订单
+//		$data 				= [];
+//		$data['order_id'] 	= $this->_orderModel->buildOrderNo();
+//		$data['goods_id'] 	= $goodsInfo['id'];
+//		$data['addtime'] 	= time();
+//		$data['uid']		= 1;
+//		$order_rs 			= $this->_orderModel->create_order($data);
+//
+//		//库存减少
+//		$gid 	= $goodsInfo['id'];
+//		$sql	= 'UPDATE goods SET counts = counts - 1 WHERE id = '.$gid;
+//		$result = $this->_goodsModel->exect($sql);
+//		return true;
+//	}
 
 
 
