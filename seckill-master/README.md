@@ -1,4 +1,4 @@
-# seckill 秒杀系统
+# seckill 秒杀系统chen
 ## 环境
 * php5.6 + phpredis扩展
 * redis服务
